@@ -3,15 +3,16 @@ const openid = require('../openid');
 
 module.exports = respond => ({
   authorize: (client_id, scope, state, response_type) => {
-    const authorizeUrl = openid.getAuthorizeUrl(
+    openid.getAuthorizeUrl(
       client_id,
       scope,
       state,
       response_type
-    );
-    logger.info('Redirecting to authorizeUrl');
-    logger.debug('Authorize Url is: %s', authorizeUrl, {});
-    respond.redirect(authorizeUrl);
+    ).then(authorizeUrl => {
+      logger.info('Redirecting to authorizeUrl');
+      logger.debug('Authorize Url is: %s', authorizeUrl, {});
+      respond.redirect(authorizeUrl);
+    });
   },
   userinfo: tokenPromise => {
     tokenPromise

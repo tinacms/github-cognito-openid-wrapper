@@ -52,9 +52,9 @@ module.exports = (apiBaseUrl, loginBaseUrl) => {
   const urls = getApiEndpoints(apiBaseUrl, loginBaseUrl || apiBaseUrl);
   return {
     getAuthorizeUrl: (client_id, scope, state, response_type) =>
-      `${urls.oauthAuthorize}?client_id=${client_id}&scope=${encodeURIComponent(
+      Promise.resolve(`${urls.oauthAuthorize}?client_id=${client_id}&scope=${encodeURIComponent(
         scope
-      )}&state=${state}&response_type=${response_type}`,
+      )}&state=${state}&response_type=${response_type}`),
     getUserDetails: accessToken =>
       gitHubGet(urls.userDetails, accessToken).then(check),
     getUserEmails: accessToken =>
