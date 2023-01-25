@@ -1,6 +1,5 @@
 const JSONWebKey = require('json-web-key');
 const jwt = require('jsonwebtoken');
-const { GITHUB_CLIENT_ID } = require('./config');
 const logger = require('./connectors/logger');
 
 const KEY_ID = 'jwtRS256';
@@ -14,11 +13,11 @@ module.exports = {
     ...JSONWebKey.fromPEM(pubKey).toJSON()
   }),
 
-  makeIdToken: (payload, host) => {
+  makeIdToken: (aud, payload, host) => {
     const enrichedPayload = {
       ...payload,
       iss: `https://${host}`,
-      aud: GITHUB_CLIENT_ID
+      aud
     };
     logger.debug('Signing payload %j', enrichedPayload, {});
     return jwt.sign(enrichedPayload, cert, {

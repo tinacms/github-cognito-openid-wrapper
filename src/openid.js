@@ -5,7 +5,9 @@ const github = require('./github');
 const workos = require('./workos');
 
 const {
-  OPENID_PROVIDER
+  GITHUB_CLIENT_ID,
+  OPENID_PROVIDER,
+  COGNITO_USERPOOL_CLIENTID,
 } = require('./config');
 
 const getJwks = () => ({ keys: [crypto.getPublicKey()] });
@@ -106,7 +108,8 @@ if (OPENID_PROVIDER === 'github') {
             //  ...userInfo,
           };
 
-          const idToken = crypto.makeIdToken(payload, host);
+          // unclear why aud is different for this token than workos
+          const idToken = crypto.makeIdToken(GITHUB_CLIENT_ID, payload, host);
           const tokenResponse = {
             ...githubToken,
             scope,
@@ -139,7 +142,7 @@ if (OPENID_PROVIDER === 'github') {
         //  ...userInfo,
       };
 
-      const idToken = crypto.makeIdToken(payload, host);
+      const idToken = crypto.makeIdToken(COGNITO_USERPOOL_CLIENTID, payload, host);
       const tokenResponse = {
         access_token: token,
         scope,
