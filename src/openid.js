@@ -66,7 +66,10 @@ if (OPENID_PROVIDER === 'github') {
 } else if (OPENID_PROVIDER === 'workos') {
   getUserInfo = accessToken => workos.getProfile(accessToken).then(profile => {
     logger.debug('Fetched workos profile: %j', profile, {});
-    return profile
+    return {
+      ...profile,
+      sub: profile.id,
+    }
   })
 }
 
