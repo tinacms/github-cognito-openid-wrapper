@@ -6,7 +6,7 @@ const {
   WORKOS_CLIENT_SECRET
 } = require('./config');
 
-const workos = new WorkOS(WORKOS_CLIENT_SECRET);
+const workos = new WorkOS.WorkOS(WORKOS_CLIENT_SECRET);
 
 module.exports = {
   getProfile: async (accessToken) => workos.sso.getProfile({ accessToken }),
