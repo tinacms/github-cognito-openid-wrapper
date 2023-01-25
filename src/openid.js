@@ -7,7 +7,7 @@ const workos = require('./workos');
 const {
   GITHUB_CLIENT_ID,
   OPENID_PROVIDER,
-  COGNITO_USERPOOL_CLIENTID,
+  WORKOS_CLIENT_ID,
 } = require('./config');
 
 const getJwks = () => ({ keys: [crypto.getPublicKey()] });
@@ -142,7 +142,7 @@ if (OPENID_PROVIDER === 'github') {
         //  ...userInfo,
       };
 
-      const idToken = crypto.makeIdToken(COGNITO_USERPOOL_CLIENTID, payload, host);
+      const idToken = crypto.makeIdToken(WORKOS_CLIENT_ID, payload, host);
       const tokenResponse = {
         access_token: token,
         scope,
