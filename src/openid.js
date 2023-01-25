@@ -119,10 +119,39 @@ if (OPENID_PROVIDER === 'github') {
         });
       });
 } else if (OPENID_PROVIDER === 'workos') {
-  getTokens = (code) => workos.getToken(code).then(token => {
+  getTokens = (code, state, host) => workos.getToken(code).then(token => {
       logger.debug('Got token: %s', token, {});
-      return token
-    })
+    const scope = `openid`;
+
+    // ** JWT ID Token required fields **
+    // iss - issuer https url
+    // aud - audience that this token is valid for (GITHUB_CLIENT_ID)
+    // sub - subject identifier - must be unique
+    // ** Also required, but provided by jsonwebtoken **
+    // exp - expiry time for the id token (seconds since epoch in UTC)
+    // iat - time that the JWT was issued (seconds since epoch in UTC)
+
+    return new Promise(resolve => {
+      const payload = {
+        // This was commented because Cognito times out in under a second
+        // and generating the userInfo takes too long.
+        // It means the ID token is empty except for metadata.
+        //  ...userInfo,
+      };
+
+      const idToken = crypto.makeIdToken(payload, host);
+      const tokenResponse = {
+        access_token: token,
+        scope,
+        token_type: 'Bearer',
+        id_token: idToken
+      };
+
+      logger.debug('Resolved token response: %j', tokenResponse, {});
+
+      resolve(tokenResponse);
+    });
+  })
 }
 
 const getConfigFor = host => ({
