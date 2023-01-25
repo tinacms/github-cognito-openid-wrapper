@@ -2,101 +2,128 @@ const logger = require('./connectors/logger');
 const { NumericDate } = require('./helpers');
 const crypto = require('./crypto');
 const github = require('./github');
+const workos = require('./workos');
+
+const {
+  OPENID_PROVIDER
+} = require('./config');
 
 const getJwks = () => ({ keys: [crypto.getPublicKey()] });
 
-const getUserInfo = accessToken =>
-  Promise.all([
-    github()
-      .getUserDetails(accessToken)
-      .then(userDetails => {
-        logger.debug('Fetched user details: %j', userDetails, {});
-        // Here we map the github user response to the standard claims from
-        // OpenID. The mapping was constructed by following
-        // https://developer.github.com/v3/users/
-        // and http://openid.net/specs/openid-connect-core-1_0.html#StandardClaims
-        const claims = {
-          sub: `${userDetails.id}`, // OpenID requires a string
-          name: userDetails.name,
-          preferred_username: userDetails.login,
-          profile: userDetails.html_url,
-          picture: userDetails.avatar_url,
-          website: userDetails.blog,
-          updated_at: NumericDate(
-            // OpenID requires the seconds since epoch in UTC
-            new Date(Date.parse(userDetails.updated_at))
-          )
-        };
-        logger.debug('Resolved claims: %j', claims, {});
-        return claims;
-      }),
-    github()
-      .getUserEmails(accessToken)
-      .then(userEmails => {
-        logger.debug('Fetched user emails: %j', userEmails, {});
-        const primaryEmail = userEmails.find(email => email.primary);
-        if (primaryEmail === undefined) {
-          throw new Error('User did not have a primary email address');
-        }
-        const claims = {
-          email: primaryEmail.email,
-          email_verified: primaryEmail.verified
-        };
-        logger.debug('Resolved claims: %j', claims, {});
-        return claims;
-      })
-  ]).then(claims => {
-    const mergedClaims = claims.reduce(
-      (acc, claim) => ({ ...acc, ...claim }),
-      {}
-    );
-    logger.debug('Resolved combined claims: %j', mergedClaims, {});
-    return mergedClaims;
-  });
-
-const getAuthorizeUrl = (client_id, scope, state, response_type) =>
-  github().getAuthorizeUrl(client_id, scope, state, response_type);
-
-const getTokens = (code, state, host) =>
-  github()
-    .getToken(code, state)
-    .then(githubToken => {
-      logger.debug('Got token: %s', githubToken, {});
-      // GitHub returns scopes separated by commas
-      // But OAuth wants them to be spaces
-      // https://tools.ietf.org/html/rfc6749#section-5.1
-      // Also, we need to add openid as a scope,
-      // since GitHub will have stripped it
-      const scope = `openid ${githubToken.scope.replace(',', ' ')}`;
-
-      // ** JWT ID Token required fields **
-      // iss - issuer https url
-      // aud - audience that this token is valid for (GITHUB_CLIENT_ID)
-      // sub - subject identifier - must be unique
-      // ** Also required, but provided by jsonwebtoken **
-      // exp - expiry time for the id token (seconds since epoch in UTC)
-      // iat - time that the JWT was issued (seconds since epoch in UTC)
-
-      return new Promise(resolve => {
-        const payload = {
-          // This was commented because Cognito times out in under a second
-          // and generating the userInfo takes too long.
-          // It means the ID token is empty except for metadata.
-          //  ...userInfo,
-        };
-
-        const idToken = crypto.makeIdToken(payload, host);
-        const tokenResponse = {
-          ...githubToken,
-          scope,
-          id_token: idToken
-        };
-
-        logger.debug('Resolved token response: %j', tokenResponse, {});
-
-        resolve(tokenResponse);
-      });
+let getUserInfo
+if (OPENID_PROVIDER === 'github') {
+  getUserInfo = accessToken =>
+    Promise.all([
+      github()
+        .getUserDetails(accessToken)
+        .then(userDetails => {
+          logger.debug('Fetched user details: %j', userDetails, {});
+          // Here we map the github user response to the standard claims from
+          // OpenID. The mapping was constructed by following
+          // https://developer.github.com/v3/users/
+          // and http://openid.net/specs/openid-connect-core-1_0.html#StandardClaims
+          const claims = {
+            sub: `${userDetails.id}`, // OpenID requires a string
+            name: userDetails.name,
+            preferred_username: userDetails.login,
+            profile: userDetails.html_url,
+            picture: userDetails.avatar_url,
+            website: userDetails.blog,
+            updated_at: NumericDate(
+              // OpenID requires the seconds since epoch in UTC
+              new Date(Date.parse(userDetails.updated_at))
+            )
+          };
+          logger.debug('Resolved claims: %j', claims, {});
+          return claims;
+        }),
+      github()
+        .getUserEmails(accessToken)
+        .then(userEmails => {
+          logger.debug('Fetched user emails: %j', userEmails, {});
+          const primaryEmail = userEmails.find(email => email.primary);
+          if (primaryEmail === undefined) {
+            throw new Error('User did not have a primary email address');
+          }
+          const claims = {
+            email: primaryEmail.email,
+            email_verified: primaryEmail.verified
+          };
+          logger.debug('Resolved claims: %j', claims, {});
+          return claims;
+        })
+    ]).then(claims => {
+      const mergedClaims = claims.reduce(
+        (acc, claim) => ({ ...acc, ...claim }),
+        {}
+      );
+      logger.debug('Resolved combined claims: %j', mergedClaims, {});
+      return mergedClaims;
     });
+
+} else if (OPENID_PROVIDER === 'workos') {
+  getUserInfo = accessToken => workos.getProfile(accessToken).then(profile => {
+    logger.debug('Fetched workos profile: %j', profile, {});
+    return profile
+  })
+}
+
+let getAuthorizeUrl
+if (OPENID_PROVIDER === 'github') {
+  getAuthorizeUrl = (client_id, scope, state, response_type) =>
+    github().getAuthorizeUrl(client_id, scope, state, response_type);
+} else if (OPENID_PROVIDER === 'workos') {
+  getAuthorizeUrl = (client_id, scope, state) => workos.getAuthorizeUrl(client_id, state)
+}
+
+let getTokens
+if (OPENID_PROVIDER === 'github') {
+  getTokens = (code, state, host) =>
+    github()
+      .getToken(code, state)
+      .then(githubToken => {
+        logger.debug('Got token: %s', githubToken, {});
+        // GitHub returns scopes separated by commas
+        // But OAuth wants them to be spaces
+        // https://tools.ietf.org/html/rfc6749#section-5.1
+        // Also, we need to add openid as a scope,
+        // since GitHub will have stripped it
+        const scope = `openid ${githubToken.scope.replace(',', ' ')}`;
+
+        // ** JWT ID Token required fields **
+        // iss - issuer https url
+        // aud - audience that this token is valid for (GITHUB_CLIENT_ID)
+        // sub - subject identifier - must be unique
+        // ** Also required, but provided by jsonwebtoken **
+        // exp - expiry time for the id token (seconds since epoch in UTC)
+        // iat - time that the JWT was issued (seconds since epoch in UTC)
+
+        return new Promise(resolve => {
+          const payload = {
+            // This was commented because Cognito times out in under a second
+            // and generating the userInfo takes too long.
+            // It means the ID token is empty except for metadata.
+            //  ...userInfo,
+          };
+
+          const idToken = crypto.makeIdToken(payload, host);
+          const tokenResponse = {
+            ...githubToken,
+            scope,
+            id_token: idToken
+          };
+
+          logger.debug('Resolved token response: %j', tokenResponse, {});
+
+          resolve(tokenResponse);
+        });
+      });
+} else if (OPENID_PROVIDER === 'workos') {
+  getTokens = (code) => workos.getToken(code).then(token => {
+      logger.debug('Got token: %s', token, {});
+      return token
+    })
+}
 
 const getConfigFor = host => ({
   issuer: `https://${host}`,
@@ -112,7 +139,7 @@ const getConfigFor = host => ({
   // end_session_endpoint: 'https://server.example.com/connect/end_session',
   jwks_uri: `https://${host}/.well-known/jwks.json`,
   // registration_endpoint: 'https://server.example.com/connect/register',
-  scopes_supported: ['openid', 'read:user', 'user:email'],
+  scopes_supported: ['openid', 'read:user', 'user:email', 'aws.cognito.signin.user.admin'],
   response_types_supported: [
     'code',
     'code id_token',

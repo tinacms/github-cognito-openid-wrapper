@@ -1,10 +1,14 @@
 module.exports = {
+  OPENID_PROVIDER: process.env.OPENID_PROVIDER || 'github',
   GITHUB_CLIENT_ID: process.env.GITHUB_CLIENT_ID,
   GITHUB_CLIENT_SECRET: process.env.GITHUB_CLIENT_SECRET,
   COGNITO_REDIRECT_URI: process.env.COGNITO_REDIRECT_URI,
   GITHUB_API_URL: process.env.GITHUB_API_URL,
   GITHUB_LOGIN_URL: process.env.GITHUB_LOGIN_URL,
   PORT: parseInt(process.env.PORT, 10) || undefined,
+
+  WORKOS_CLIENT_ID: process.env.WORKOS_CLIENT_ID,
+  WORKOS_CLIENT_SECRET: process.env.WORKOS_CLIENT_SECRET,
 
   // Splunk logging variables
   SPLUNK_URL: process.env.SPLUNK_URL,
