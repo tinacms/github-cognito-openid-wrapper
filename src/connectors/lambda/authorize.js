@@ -1,7 +1,9 @@
+const logger = require('../logger');
 const responder = require('./util/responder');
 const controllers = require('../controllers');
 
 module.exports.handler = (event, context, callback) => {
+  logger.debug(event.queryStringParameters)
   const {
     client_id,
     scope,
