@@ -37,7 +37,7 @@ module.exports = {
     }),
 
   getIssuer: (host, stage, resourcePath) => {
-    const issuer = `${host}/${stage}/${resourcePath.split('/').slice(0, -1).join('/')}`;
+    const issuer = `${host}/${stage}${resourcePath.split('/').slice(0, -1).join('/')}`;
     logger.debug('Issuer: %s', issuer);
     return issuer;
   }
