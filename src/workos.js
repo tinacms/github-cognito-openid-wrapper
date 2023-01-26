@@ -14,11 +14,11 @@ module.exports = {
     const { access_token } = await workos.sso.getProfileAndToken({ code, clientID: WORKOS_CLIENT_ID })
     return access_token;
   },
-  getAuthorizeUrl: async (client_id, state) =>
+  getAuthorizeUrl: async (client_id, state, response_type, idpMetadata) =>
     workos.sso.getAuthorizationURL({
+      ...idpMetadata,
       clientID: WORKOS_CLIENT_ID,
       redirectURI: COGNITO_REDIRECT_URI,
       state,
-      connection: 'conn_01GQFZZDJE3X667ZPNEK7H1GZE'
     })
 }

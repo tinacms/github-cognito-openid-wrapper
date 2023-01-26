@@ -3,5 +3,5 @@ const auth = require('./util/auth');
 const controllers = require('../controllers');
 
 module.exports.handler = (event, context, callback) => {
-  controllers(responder(callback)).userinfo(auth.getBearerToken(event));
+  controllers(responder(callback)).userinfo(auth.getBearerToken(event), auth.resolveIdp(event.requestContext.resourcePath));
 };

@@ -40,5 +40,38 @@ module.exports = {
     const issuer = `${host}/${stage}${resourcePath.split('/').slice(0, -1).join('/')}`;
     logger.debug('Issuer: %s', issuer);
     return issuer;
+  },
+
+  // Parse the resourcePath and return some metadata about the id provider
+  resolveIdp: (resourcePath) => {
+    if (resourcePath.startsWith('github')) {
+     return {
+       github: true
+     }
+    }
+
+    const parts = resourcePath.split('/');
+    if (parts[0] !== 'workos') {
+      throw new Error(`Unsupported idp: ${parts[0]}`);
+    } else {
+      const type = parts[1]
+      const id = parts[2]
+      if (type === 'conn') {
+        return {
+          connection: id
+        }
+      }
+      if (type === 'org') {
+        return {
+          organization: id
+        }
+      }
+      if (type === 'provider') {
+        return {
+          provider: id
+        }
+      }
+      throw new Error(`Unsupported workos configuration ${parts[1]}`);
+    }
   }
 };

@@ -6,65 +6,63 @@ const workos = require('./workos');
 
 const {
   GITHUB_CLIENT_ID,
-  OPENID_PROVIDER,
   WORKOS_CLIENT_ID,
 } = require('./config');
 
 const getJwks = () => ({ keys: [crypto.getPublicKey()] });
 
-let getUserInfo
-if (OPENID_PROVIDER === 'github') {
-  getUserInfo = accessToken =>
-    Promise.all([
-      github()
-        .getUserDetails(accessToken)
-        .then(userDetails => {
-          logger.debug('Fetched user details: %j', userDetails, {});
-          // Here we map the github user response to the standard claims from
-          // OpenID. The mapping was constructed by following
-          // https://developer.github.com/v3/users/
-          // and http://openid.net/specs/openid-connect-core-1_0.html#StandardClaims
-          const claims = {
-            sub: `${userDetails.id}`, // OpenID requires a string
-            name: userDetails.name,
-            preferred_username: userDetails.login,
-            profile: userDetails.html_url,
-            picture: userDetails.avatar_url,
-            website: userDetails.blog,
-            updated_at: NumericDate(
-              // OpenID requires the seconds since epoch in UTC
-              new Date(Date.parse(userDetails.updated_at))
-            )
-          };
-          logger.debug('Resolved claims: %j', claims, {});
-          return claims;
-        }),
-      github()
-        .getUserEmails(accessToken)
-        .then(userEmails => {
-          logger.debug('Fetched user emails: %j', userEmails, {});
-          const primaryEmail = userEmails.find(email => email.primary);
-          if (primaryEmail === undefined) {
-            throw new Error('User did not have a primary email address');
-          }
-          const claims = {
-            email: primaryEmail.email,
-            email_verified: primaryEmail.verified
-          };
-          logger.debug('Resolved claims: %j', claims, {});
-          return claims;
-        })
-    ]).then(claims => {
-      const mergedClaims = claims.reduce(
-        (acc, claim) => ({ ...acc, ...claim }),
-        {}
-      );
-      logger.debug('Resolved combined claims: %j', mergedClaims, {});
-      return mergedClaims;
-    });
+const getUserInfo = (accessToken, idpMetadata) => {
+ if (idpMetadata.github) {
+   return Promise.all([
+     github()
+       .getUserDetails(accessToken)
+       .then(userDetails => {
+         logger.debug('Fetched user details: %j', userDetails, {});
+         // Here we map the github user response to the standard claims from
+         // OpenID. The mapping was constructed by following
+         // https://developer.github.com/v3/users/
+         // and http://openid.net/specs/openid-connect-core-1_0.html#StandardClaims
+         const claims = {
+           sub: `${userDetails.id}`, // OpenID requires a string
+           name: userDetails.name,
+           preferred_username: userDetails.login,
+           profile: userDetails.html_url,
+           picture: userDetails.avatar_url,
+           website: userDetails.blog,
+           updated_at: NumericDate(
+             // OpenID requires the seconds since epoch in UTC
+             new Date(Date.parse(userDetails.updated_at))
+           )
+         };
+         logger.debug('Resolved claims: %j', claims, {});
+         return claims;
+       }),
+     github()
+       .getUserEmails(accessToken)
+       .then(userEmails => {
+         logger.debug('Fetched user emails: %j', userEmails, {});
+         const primaryEmail = userEmails.find(email => email.primary);
+         if (primaryEmail === undefined) {
+           throw new Error('User did not have a primary email address');
+         }
+         const claims = {
+           email: primaryEmail.email,
+           email_verified: primaryEmail.verified
+         };
+         logger.debug('Resolved claims: %j', claims, {});
+         return claims;
+       })
+   ]).then(claims => {
+     const mergedClaims = claims.reduce(
+       (acc, claim) => ({ ...acc, ...claim }),
+       {}
+     );
+     logger.debug('Resolved combined claims: %j', mergedClaims, {});
+     return mergedClaims;
+   });
+ }
 
-} else if (OPENID_PROVIDER === 'workos') {
-  getUserInfo = accessToken => workos.getProfile(accessToken).then(profile => {
+  return workos.getProfile(accessToken).then(profile => {
     logger.debug('Fetched workos profile: %j', profile, {});
     return {
       ...profile,
@@ -73,18 +71,16 @@ if (OPENID_PROVIDER === 'github') {
   })
 }
 
-let getAuthorizeUrl
-if (OPENID_PROVIDER === 'github') {
-  getAuthorizeUrl = (client_id, scope, state, response_type) =>
-    github().getAuthorizeUrl(client_id, scope, state, response_type);
-} else if (OPENID_PROVIDER === 'workos') {
-  getAuthorizeUrl = (client_id, scope, state) => workos.getAuthorizeUrl(client_id, state)
+const getAuthorizeUrl = (client_id, scope, state, response_type, idpMetadata) => {
+ if (idpMetadata.github) {
+   return github().getAuthorizeUrl(client_id, scope, state, response_type);
+ }
+ return workos.getAuthorizeUrl(client_id, scope, state, response_type, idpMetadata);
 }
 
-let getTokens
-if (OPENID_PROVIDER === 'github') {
-  getTokens = (code, state, host) =>
-    github()
+const getTokens = (code, state, host, idpMetadata) => {
+  if (idpMetadata.github) {
+    return github()
       .getToken(code, state)
       .then(githubToken => {
         logger.debug('Got token: %s', githubToken, {});
@@ -124,9 +120,9 @@ if (OPENID_PROVIDER === 'github') {
           resolve(tokenResponse);
         });
       });
-} else if (OPENID_PROVIDER === 'workos') {
-  getTokens = (code, state, host) => workos.getToken(code).then(token => {
-      logger.debug('Got token: %s', token, {});
+  }
+  return workos.getToken(code).then(token => {
+    logger.debug('Got token: %s', token, {});
     const scope = `openid`;
 
     // ** JWT ID Token required fields **
@@ -157,7 +153,7 @@ if (OPENID_PROVIDER === 'github') {
 
       resolve(tokenResponse);
     });
-  })
+  });
 }
 
 const getConfigFor = host => ({

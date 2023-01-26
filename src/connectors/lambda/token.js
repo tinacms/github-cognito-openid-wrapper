@@ -30,6 +30,7 @@ module.exports.handler = (event, context, callback) => {
       event.headers.Host,
       event.requestContext && event.requestContext.stage,
       event.requestContext && event.requestContext.resourcePath,
-    )
+    ),
+    auth.resolveIdp(event.requestContext.resourcePath),
   );
 };

@@ -2,21 +2,22 @@ const logger = require('./logger');
 const openid = require('../openid');
 
 module.exports = respond => ({
-  authorize: (client_id, scope, state, response_type) => {
+  authorize: (client_id, scope, state, response_type, idpMetadata) => {
     openid.getAuthorizeUrl(
       client_id,
       scope,
       state,
-      response_type
+      response_type,
+      idpMetadata
     ).then(authorizeUrl => {
       logger.info('Redirecting to authorizeUrl');
       logger.debug('Authorize Url is: %s', authorizeUrl, {});
       respond.redirect(authorizeUrl);
     });
   },
-  userinfo: tokenPromise => {
+  userinfo: (tokenPromise, idpMetadata) => {
     tokenPromise
-      .then(token => openid.getUserInfo(token))
+      .then(token => openid.getUserInfo(token, idpMetadata))
       .then(userInfo => {
         logger.debug('Resolved user infos:', userInfo, {});
         respond.success(userInfo);
@@ -30,10 +31,10 @@ module.exports = respond => ({
         respond.error(error);
       });
   },
-  token: (code, state, host) => {
+  token: (code, state, host, idpMetadata) => {
     if (code) {
       openid
-        .getTokens(code, state, host)
+        .getTokens(code, state, host, idpMetadata)
         .then(tokens => {
           logger.debug(
             'Token for (%s, %s, %s) provided',
