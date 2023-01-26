@@ -4,6 +4,7 @@ const controllers = require('../controllers');
 
 module.exports.handler = (event, context, callback) => {
   logger.debug(event.queryStringParameters)
+  logger.debug(event.requestContext)
   const {
     client_id,
     scope,
