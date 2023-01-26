@@ -36,9 +36,9 @@ module.exports = {
       }
     }),
 
-  getIssuer: (host, stage) => {
-    const lStage = stage;
-    const issuer = `${host}/${lStage}`;
+  getIssuer: (host, stage, resourcePath) => {
+    const issuer = `${host}/${stage}/${resourcePath.split('/').slice(0, -1).join('/')}`;
+    logger.debug('Issuer: %s', issuer);
     return issuer;
   }
 };
