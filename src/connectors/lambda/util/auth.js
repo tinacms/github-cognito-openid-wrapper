@@ -44,34 +44,41 @@ module.exports = {
 
   // Parse the resourcePath and return some metadata about the id provider
   resolveIdp: (resourcePath) => {
-    if (resourcePath.startsWith('github')) {
-     return {
+    logger.debug('Resource path: %s', resourcePath);
+    let metadata
+    if (resourcePath.startsWith('/github')) {
+     metadata = {
        github: true
      }
-    }
-
-    const parts = resourcePath.split('/');
-    if (parts[0] !== 'workos') {
-      throw new Error(`Unsupported idp: ${parts[0]}`);
     } else {
-      const type = parts[1]
-      const id = parts[2]
-      if (type === 'conn') {
-        return {
-          connection: id
+      const parts = resourcePath.split('/');
+      if (parts[1] !== 'workos') {
+        throw new Error(`Unsupported idp: ${parts[1]}`);
+      } else {
+        const type = parts[2]
+        const id = parts[3]
+        if (type === 'conn') {
+          metadata = {
+            connection: id
+          }
+        } else
+        if (type === 'org') {
+          metadata = {
+            organization: id
+          }
+        } else
+        if (type === 'provider') {
+          metadata = {
+            provider: id
+          }
         }
       }
-      if (type === 'org') {
-        return {
-          organization: id
-        }
-      }
-      if (type === 'provider') {
-        return {
-          provider: id
-        }
-      }
-      throw new Error(`Unsupported workos configuration ${parts[1]}`);
     }
+    if (!metadata) {
+      throw new Error(`Unsupported resource path: ${resourcePath}`);
+    }
+    logger.debug(resourcePath)
+    logger.debug('Resolved idp: %s', JSON.stringify(metadata));
+    return metadata;
   }
 };
