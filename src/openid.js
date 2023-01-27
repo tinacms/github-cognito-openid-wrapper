@@ -72,6 +72,7 @@ const getUserInfo = (accessToken, idpMetadata) => {
 }
 
 const getAuthorizeUrl = (client_id, scope, state, response_type, idpMetadata) => {
+ logger.debug('getAuthorizeUrl', {idpMetadata})
  if (idpMetadata.github) {
    return github().getAuthorizeUrl(client_id, scope, state, response_type);
  }

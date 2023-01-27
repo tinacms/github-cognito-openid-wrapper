@@ -14,7 +14,7 @@ module.exports = {
     const { access_token } = await workos.sso.getProfileAndToken({ code, clientID: WORKOS_CLIENT_ID })
     return access_token;
   },
-  getAuthorizeUrl: async (client_id, state, response_type, idpMetadata) =>
+  getAuthorizeUrl: async (client_id, scope, state, response_type, idpMetadata) =>
     workos.sso.getAuthorizationURL({
       ...idpMetadata,
       clientID: WORKOS_CLIENT_ID,

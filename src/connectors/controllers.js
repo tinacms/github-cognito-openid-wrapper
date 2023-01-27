@@ -3,6 +3,7 @@ const openid = require('../openid');
 
 module.exports = respond => ({
   authorize: (client_id, scope, state, response_type, idpMetadata) => {
+    logger.debug('calling getAuthorizeUrl', idpMetadata)
     openid.getAuthorizeUrl(
       client_id,
       scope,
