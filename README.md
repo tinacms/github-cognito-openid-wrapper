@@ -3,7 +3,6 @@
 [![Build Status](https://travis-ci.org/TimothyJones/github-cognito-openid-wrapper.svg?branch=master)](https://travis-ci.org/TimothyJones/github-cognito-openid-wrapper)
 [![Maintainability](https://api.codeclimate.com/v1/badges/f787719be529b1c0e8ee/maintainability)](https://codeclimate.com/github/TimothyJones/github-openid-wrapper/maintainability)
 [![Test Coverage](https://api.codeclimate.com/v1/badges/f787719be529b1c0e8ee/test_coverage)](https://codeclimate.com/github/TimothyJones/github-openid-wrapper/test_coverage)
-[![Known Vulnerabilities](https://snyk.io/test/github/TimothyJones/github-cognito-openid-wrapper/badge.svg?targetFile=package.json)](https://snyk.io/test/github/TimothyJones/github-cognito-openid-wrapper?targetFile=package.json)
 [![License](https://img.shields.io/badge/License-BSD%203--Clause-blue.svg)](https://opensource.org/licenses/BSD-3-Clause)
 <!-- ALL-CONTRIBUTORS-BADGE:START - Do not remove or modify this section -->
 [![All Contributors](https://img.shields.io/badge/all_contributors-9-orange.svg?style=flat-square)](#contributors-)

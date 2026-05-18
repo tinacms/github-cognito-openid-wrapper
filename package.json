@@ -20,9 +20,7 @@
     "prerelease": "npm run lint && npm run test && npm run build",
     "release": "standard-version",
     "deploy": "./scripts/deploy.sh",
-    "coverage": "jest --runInBand --coverage",
-    "snyk-protect": "snyk protect",
-    "prepare": "npm run snyk-protect"
+    "coverage": "jest --runInBand --coverage"
   },
   "author": "",
   "license": "ISC",
@@ -35,8 +33,7 @@
     "json-web-key": "^0.3.0",
     "jsonwebtoken": "^8.3.0",
     "winston": "^3.2.1",
-    "winston-splunk-httplogger": "^2.2.0",
-    "snyk": "^1.518.0"
+    "winston-splunk-httplogger": "^2.2.0"
   },
   "devDependencies": {
     "@babel/core": "^7.3.4",
@@ -67,6 +64,5 @@
   },
   "engines": {
     "node": ">=10"
-  },
-  "snyk": true
+  }
 }
